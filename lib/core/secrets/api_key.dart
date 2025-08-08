@@ -1,1 +1,3 @@
-const myApiKey = '340be35e830142afb7a162ce8afbf700';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final myApiKey = dotenv.env['API_KEY'] ?? 'default_key';

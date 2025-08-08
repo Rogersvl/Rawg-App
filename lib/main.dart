@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:games_app/features/games/data/datasources/game_remote_data_source.dart';
 import 'package:games_app/features/games/data/local/database_helper.dart';
 import 'package:games_app/features/user/presentation/pages/login_page.dart';
@@ -10,6 +11,7 @@ import 'package:games_app/features/user/presentation/pages/game_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseHelper().database;
+  await dotenv.load(fileName: ".env");
 
   final dio = Dio();
   final dataSource = GameRemoteDataSource(dio: dio);
