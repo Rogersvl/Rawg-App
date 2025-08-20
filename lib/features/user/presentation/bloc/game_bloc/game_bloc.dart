@@ -13,18 +13,6 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     on<SearchGames>(_onSearchGames);
   }
 
-  // GameBloc(this.remoteDataSource) : super(GameInitial()) {
-  //   on<SearchGames>((event, emit) async {
-  //     emit(GameLoading());
-  //     try {
-  //       final games = await remoteDataSource.searchgames(event.query);
-  //       final genres = await remoteDataSource.getGenres();
-  //       emit(GameLoaded(games: games, genres: genres));
-  //     } catch (e) {
-  //       emit(GameError('Erro ao buscar jogos'));
-  //     }
-  //   });
-
   Future<void> _onSearchGames(
     SearchGames event,
     Emitter<GameState> emit,
