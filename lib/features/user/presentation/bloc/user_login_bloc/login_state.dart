@@ -1,13 +1,21 @@
+import 'package:games_app/features/user/domain/entities/user.dart';
+
 abstract class LoginState {}
 
 class LoginInitial extends LoginState {}
 
 class LoginLoading extends LoginState {}
 
-class LoginSuccess extends LoginState {}
+class LoginSuccess extends LoginState {
+  final User user;
+
+  LoginSuccess(this.user);
+}
 
 class LoginFailure extends LoginState {
-  final String message;
+  final String error;
 
-  LoginFailure(this.message);
+  LoginFailure(this.error);
 }
+
+class LogoutSuccess extends LoginState {}

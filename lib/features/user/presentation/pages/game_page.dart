@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:games_app/features/games/data/datasources/game_remote_data_source.dart';
+import 'package:games_app/features/games/data/datasources/remote/game_remote_data_source.dart';
 import 'package:games_app/features/user/presentation/bloc/game_bloc/game_bloc.dart';
 import 'package:games_app/features/user/presentation/bloc/game_bloc/game_event.dart';
 import 'package:games_app/features/user/presentation/bloc/game_bloc/game_state.dart';
@@ -17,6 +17,8 @@ class GamePage extends StatefulWidget {
 
 class _GamePageState extends State<GamePage> {
   final TextEditingController controller = TextEditingController();
+  bool searchExact = false;
+  bool isDescending = false;
 
   @override
   void initState() {
@@ -36,6 +38,18 @@ class _GamePageState extends State<GamePage> {
             onPressed: () async {},
             child: Text('Login', style: TextStyle(color: Colors.blueAccent)),
           ),
+          IconButton(
+            icon: Icon(isDescending ? Icons.arrow_downward : Icons.arrow_upward),
+            onPressed: () {
+              setState(() {
+                isDescending = !isDescending;
+              });
+
+              context.read<GameBloc>().add(
+                SortGamesByRatingEvent(descending: isDescending),
+              );
+            },
+          ),
         ],
       ),
 
@@ -49,12 +63,27 @@ class _GamePageState extends State<GamePage> {
                 hintText: 'Digite o nome de um Jogo',
                 suffixIcon: IconButton(
                   onPressed: () {
-                    context.read<GameBloc>().add(SearchGames(controller.text));
+                    context.read<GameBloc>().add(
+                      SearchGames(controller.text, searchExact: searchExact),
+                    );
                   },
                   icon: Icon(Icons.search),
                 ),
               ),
             ),
+          ),
+          Row(
+            children: [
+              Checkbox(
+                value: searchExact,
+                onChanged: (value) {
+                  setState(() {
+                    searchExact = value ?? false;
+                  });
+                },
+              ),
+              Text('Filtrar por nome'),
+            ],
           ),
           Expanded(
             child: BlocBuilder<GameBloc, GameState>(
@@ -99,7 +128,6 @@ class _GamePageState extends State<GamePage> {
                       ),
 
                       SizedBox(height: 16),
-
                       ...state.games.map(
                         (game) => GestureDetector(
                           onTap: () {
@@ -127,7 +155,6 @@ class _GamePageState extends State<GamePage> {
                             child: Stack(
                               alignment: Alignment.bottomLeft,
                               children: [
-                                // Imagem de fundo
                                 game.backgroundImage != null
                                     ? Image.network(
                                         game.backgroundImage!,
@@ -147,7 +174,6 @@ class _GamePageState extends State<GamePage> {
                                         ),
                                       ),
 
-                                // Gradiente + título + nota
                                 Container(
                                   height: 60,
                                   width: double.infinity,

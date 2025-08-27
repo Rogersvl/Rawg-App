@@ -10,10 +10,18 @@ class GameRemoteDataSource {
 
   GameRemoteDataSource({required this.dio});
 
-  Future<List<GameModel>> searchgames(String query) async {
+  Future<List<GameModel>> searchgames({String? query, bool exact =false}) async {
+    final params = <String, dynamic> {'key': apiKey};
+    if(query != null && query.isNotEmpty){
+      params['search'] = query;
+
+      if(exact){
+        params['search_exact'] = 'true';
+      }
+    }
     final response = await dio.get(
       'https://api.rawg.io/api/games',
-      queryParameters: {'search': query, 'key': apiKey, 'page_size': 10},
+      queryParameters: params,
     );
 
     final results = response.data['results'] as List;

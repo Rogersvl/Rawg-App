@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:games_app/features/games/data/datasources/game_remote_data_source.dart';
+// import 'package:games_app/features/games/data/datasources/game_remote_data_source.dart';
+import 'package:games_app/features/games/data/datasources/remote/game_remote_data_source.dart';
 import 'package:games_app/features/user/presentation/bloc/game_detail_bloc/game_detail_event.dart';
 import 'package:games_app/features/user/presentation/bloc/game_detail_bloc/game_detail_state.dart';
 
