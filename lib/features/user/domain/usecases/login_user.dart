@@ -1,15 +1,15 @@
-// features/user/domain/usecases/login_user.dart
+// // features/user/domain/usecases/login_user.dart
 
-import 'package:games_app/features/user/domain/entities/user.dart';
+// import 'package:games_app/features/user/domain/entities/user.dart';
 
-import '../repositories/user_repository.dart';
+// import '../repositories/user_repository.dart';
 
-class LoginUser {
-  final UserRepository repository;
+// class LoginUser {
+//   final UserRepository repository;
 
-  LoginUser(this.repository);
+//   LoginUser(this.repository);
 
-  Future<User> call(String email, String password) async {
-    return await repository.login(email, password);
-  }
-}
+//   Future<User> call(String email, String password) async {
+//     return await repository.login(email, password);
+//   }
+// }

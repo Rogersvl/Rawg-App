@@ -4,22 +4,22 @@ import 'package:games_app/features/user/presentation/bloc/auth/auth_bloc.dart';
 import 'package:games_app/features/user/presentation/bloc/auth/auth_event.dart';
 import 'package:games_app/features/user/presentation/bloc/auth/auth_state.dart';
 
-
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
+  final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: const Text('Cadastro')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: BlocConsumer<AuthBloc, AuthState>(
@@ -27,7 +27,7 @@ class _LoginPageState extends State<LoginPage> {
             if (state is AuthAuthenticated) {
               Navigator.pushReplacementNamed(context, '/home');
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Bem-vindo, ${state.user.name}!')),
+                SnackBar(content: Text('Cadastro realizado com sucesso, ${state.user.name}!')),
               );
             }
 
@@ -45,6 +45,14 @@ class _LoginPageState extends State<LoginPage> {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: emailController,
                   decoration: const InputDecoration(
@@ -64,31 +72,34 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
+                    final name = nameController.text.trim();
                     final email = emailController.text.trim();
                     final password = passwordController.text.trim();
 
-                    if (email.isEmpty || password.isEmpty) {
+                    if (name.isEmpty || email.isEmpty || password.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Preencha todos os campos')),
                       );
                       return;
                     }
-                    
+
+                    // Dispara o evento de registro
                     context.read<AuthBloc>().add(
-                          LoginRequested(
+                          RegisterRequested(
+                            name: name,
                             email: email,
                             password: password,
                           ),
                         );
                   },
-                  child: const Text('Login'),
+                  child: const Text('Cadastrar'),
                 ),
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/register');
+                    Navigator.pushReplacementNamed(context, '/login');
                   },
-                  child: const Text('Não tem conta? Cadastre-se'),
+                  child: const Text('Já tem conta? Faça login'),
                 ),
               ],
             );

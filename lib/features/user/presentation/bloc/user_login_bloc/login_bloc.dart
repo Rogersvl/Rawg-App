@@ -1,30 +1,34 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../domain/usecases/login_user.dart';
-import '../../../domain/usecases/logout_user.dart';
+import 'package:games_app/features/user/presentation/bloc/auth/auth_bloc.dart';
+import 'package:games_app/features/user/presentation/bloc/auth/auth_event.dart';
+import 'package:games_app/features/user/presentation/bloc/auth/auth_state.dart';
 import 'login_event.dart';
 import 'login_state.dart';
 
+
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
-  final LoginUser loginUser;
-  final LogoutUser logoutUser;
+  final AuthBloc authBloc;
 
-  LoginBloc({required this.loginUser, required this.logoutUser}) : super(LoginInitial()) {
-    on<LoginButtonPressed>(_onLoginPressed);
-    on<LogoutButtonPressed>(_onLogoutPressed);
-  }
+  LoginBloc({required this.authBloc}) : super(LoginInitial()) {
+    on<LoginButtonPressed>((event, emit) async {
+      emit(LoginLoading());
 
-  Future<void> _onLoginPressed(LoginButtonPressed event, Emitter<LoginState> emit) async {
-    emit(LoginLoading());
-    try {
-      final user = await loginUser(event.email, event.password);
-      emit(LoginSuccess(user));
-    } catch (e) {
-      emit(LoginFailure('Erro ao realizar login: ${e.toString()}'));
-    }
-  }
 
-  Future<void> _onLogoutPressed(LogoutButtonPressed event, Emitter<LoginState> emit) async {
-    await logoutUser();
-    emit(LogoutSuccess());
+      authBloc.add(LoginRequested(email: event.email, password: event.password));
+
+      await emit.forEach(
+        authBloc.stream,
+        onData: (authState) {
+          if (authState is AuthAuthenticated) {
+            return LoginSuccess(authState.user);
+          } else if (authState is AuthError) {
+            return LoginFailure(authState.message);
+          } else if (authState is AuthUnauthenticated) {
+            return LoginFailure("Usuário não autenticado");
+          }
+          return state;
+        },
+      );
+    });
   }
 }

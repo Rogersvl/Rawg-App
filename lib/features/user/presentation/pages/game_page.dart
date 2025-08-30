@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:games_app/features/games/data/datasources/remote/game_remote_data_source.dart';
+import 'package:games_app/features/user/presentation/bloc/auth/auth_bloc.dart';
+import 'package:games_app/features/user/presentation/bloc/auth/auth_event.dart';
+import 'package:games_app/features/user/presentation/bloc/auth/auth_state.dart';
+import 'package:games_app/features/user/presentation/bloc/favorite_bloc/favorite_bloc.dart';
+import 'package:games_app/features/user/presentation/bloc/favorite_bloc/favorite_event.dart';
+import 'package:games_app/features/user/presentation/bloc/favorite_bloc/favorite_state.dart';
 import 'package:games_app/features/user/presentation/bloc/game_bloc/game_bloc.dart';
 import 'package:games_app/features/user/presentation/bloc/game_bloc/game_event.dart';
 import 'package:games_app/features/user/presentation/bloc/game_bloc/game_state.dart';
 import 'package:games_app/features/user/presentation/bloc/game_detail_bloc/game_detail_bloc.dart';
 import 'package:games_app/features/user/presentation/bloc/game_detail_bloc/game_detail_event.dart';
 import 'package:games_app/features/user/presentation/pages/game_detail_page.dart';
+import 'package:games_app/features/user/presentation/widgets/favorites_page.dart';
+import 'package:games_app/features/user/presentation/widgets/game_card.dart';
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -26,28 +34,69 @@ class _GamePageState extends State<GamePage> {
     final bloc = context.read<GameBloc>();
     bloc.add(FetchRecentGames());
     bloc.add(GetGenres());
+
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      final favoriteBloc = context.read<FavoriteBloc>();
+      favoriteBloc.add(LoadFavorites(authState.user.id));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Buscar Jogos'),
+        title: const Text('Buscar Jogos'),
         actions: [
-          TextButton(
-            onPressed: () async {},
-            child: Text('Login', style: TextStyle(color: Colors.blueAccent)),
-          ),
-          IconButton(
-            icon: Icon(isDescending ? Icons.arrow_downward : Icons.arrow_upward),
-            onPressed: () {
-              setState(() {
-                isDescending = !isDescending;
-              });
-
-              context.read<GameBloc>().add(
-                SortGamesByRatingEvent(descending: isDescending),
-              );
+          BlocBuilder<AuthBloc, AuthState>(
+            builder: (context, state) {
+              if (state is AuthAuthenticated) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        'Olá, ${state.user.name}',
+                        style: const TextStyle(color: Colors.black),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BlocProvider.value(
+                              value: context.read<FavoriteBloc>(),
+                              child: const FavoritesPage(),
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Meus Favoritos',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.logout),
+                      onPressed: () {
+                        context.read<AuthBloc>().add(LogoutRequested());
+                      },
+                    ),
+                  ],
+                );
+              } else {
+                return TextButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/login');
+                  },
+                  child: const Text(
+                    'Login',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                );
+              }
             },
           ),
         ],
@@ -67,7 +116,7 @@ class _GamePageState extends State<GamePage> {
                       SearchGames(controller.text, searchExact: searchExact),
                     );
                   },
-                  icon: Icon(Icons.search),
+                  icon: const Icon(Icons.search),
                 ),
               ),
             ),
@@ -82,141 +131,165 @@ class _GamePageState extends State<GamePage> {
                   });
                 },
               ),
-              Text('Filtrar por nome'),
+              const Text('Busca filtrada'),
+              Checkbox(
+                value: isDescending,
+                onChanged: (value) {
+                  setState(() {
+                    isDescending = !isDescending;
+                  });
+                  context.read<GameBloc>().add(
+                    SortGamesByRatingEvent(descending: isDescending),
+                  );
+                },
+              ),
+              Text(isDescending ? 'Decrescente' : 'Crescente'),
             ],
           ),
           Expanded(
             child: BlocBuilder<GameBloc, GameState>(
               builder: (context, state) {
                 if (state is GameLoading || state is GenreLoading) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 if (state is GameLoaded) {
-                  return ListView(
-                    padding: EdgeInsets.all(12),
-                    children: [
-                      SizedBox(
-                        height: 50,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: state.genres.length,
-                          itemBuilder: (context, index) {
-                            final genre = state.genres[index];
-                            return Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8),
-                              child: GestureDetector(
-                                onTap: () {
-                                  context.read<GameBloc>().add(
-                                    FilterGamesByGenre(genre.id),
-                                  );
-                                },
-                                child: Chip(
-                                  label: Text(genre.name),
-                                  backgroundColor: Colors.blueGrey,
-                                  labelStyle: const TextStyle(
-                                    color: Colors.white,
-                                  ),
-                                  shape: StadiumBorder(
-                                    side: BorderSide(color: Colors.white70),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                  return BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, authState) {
+                      int? userId;
+                      if (authState is AuthAuthenticated) {
+                        userId = authState.user.id;
+                        context.read<FavoriteBloc>().add(LoadFavorites(userId));
+                      }
 
-                      SizedBox(height: 16),
-                      ...state.games.map(
-                        (game) => GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  final repository = context
-                                      .read<GameRemoteDataSource>();
-                                  return BlocProvider(
-                                    create: (_) => GameDetailBloc(repository)
-                                      ..add(FetchGameDetails(gameID: game.id)),
-                                    child: const GameDetailPage(),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                          child: Card(
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: Stack(
-                              alignment: Alignment.bottomLeft,
-                              children: [
-                                game.backgroundImage != null
-                                    ? Image.network(
-                                        game.backgroundImage!,
-                                        height: 180,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Container(
-                                        height: 180,
-                                        color: Colors.grey,
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.videogame_asset,
-                                            size: 50,
-                                            color: Colors.white70,
+                      return BlocBuilder<FavoriteBloc, FavoriteState>(
+                        builder: (context, favState) {
+                          List<int> favoriteIds = [];
+                          if (favState is FavoriteLoaded) {
+                            favoriteIds = favState.favorites
+                                .map((f) => f['game_id'] as int)
+                                .toList();
+                          }
+
+                          return ListView(
+                            padding: const EdgeInsets.all(12),
+                            children: [
+                              SizedBox(
+                                height: 50,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: state.genres.length,
+                                  itemBuilder: (context, index) {
+                                    final genre = state.genres[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          context.read<GameBloc>().add(
+                                            FilterGamesByGenre(genre.id),
+                                          );
+                                        },
+                                        child: Chip(
+                                          label: Text(genre.name),
+                                          backgroundColor: Colors.blueGrey,
+                                          labelStyle: const TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                          shape: const StadiumBorder(
+                                            side: BorderSide(
+                                              color: Colors.white70,
+                                            ),
                                           ),
                                         ),
                                       ),
-
-                                Container(
-                                  height: 60,
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.transparent,
-                                        Colors.black,
-                                      ],
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        game.name,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        "Nota: ${game.rating?.toStringAsFixed(1) ?? 'N/A'}",
-                                        style: TextStyle(color: Colors.amber),
-                                      ),
-                                    ],
-                                  ),
+                                    );
+                                  },
                                 ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                              ),
+                              const SizedBox(height: 16),
+                              ...state.games.map((game) {
+                                final isFavorite = favoriteIds.contains(
+                                  game.id,
+                                );
+                                return Stack(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) {
+                                              final repository = context
+                                                  .read<GameRemoteDataSource>();
+                                              return BlocProvider(
+                                                create: (_) =>
+                                                    GameDetailBloc(repository)
+                                                      ..add(
+                                                        FetchGameDetails(
+                                                          gameID: game.id,
+                                                        ),
+                                                      ),
+                                                child: const GameDetailPage(),
+                                              );
+                                            },
+                                          ),
+                                        );
+                                      },
+                                      child: GameCard(game: game),
+                                    ),
+                                    if (userId != null)
+                                      Positioned(
+                                        top: 8,
+                                        right: 8,
+                                        child: IconButton(
+                                          icon: Icon(
+                                            isFavorite
+                                                ? Icons.favorite
+                                                : Icons.favorite_border,
+                                            color: Colors.redAccent,
+                                            size: 32,
+                                          ),
+                                          onPressed: () {
+                                            if (isFavorite) {
+                                              final favorite =
+                                                  (favState as FavoriteLoaded)
+                                                      .favorites
+                                                      .firstWhere(
+                                                        (f) =>
+                                                            f['game_id'] ==
+                                                            game.id,
+                                                      );
+                                              context.read<FavoriteBloc>().add(
+                                                RemoveFavorite(
+                                                  favoriteID: favorite['id'],
+                                                  userID: userId!,
+                                                ),
+                                              );
+                                            } else {
+                                              context.read<FavoriteBloc>().add(
+                                                AddFavorite(
+                                                  userID: userId!,
+                                                  gameID: game.id,
+                                                  name: game.name,
+                                                  backgroundImage:
+                                                      game.backgroundImage ??
+                                                      '',
+                                                ),
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              }),
+                            ],
+                          );
+                        },
+                      );
+                    },
                   );
                 }
 
@@ -224,7 +297,7 @@ class _GamePageState extends State<GamePage> {
                   return Center(child: Text(state.message));
                 }
 
-                return Center(child: Text('Busque por um game!'));
+                return const Center(child: Text('Busque por um game!'));
               },
             ),
           ),

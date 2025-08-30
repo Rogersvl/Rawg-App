@@ -1,17 +1,35 @@
 class User {
-  final String id;
+  final int id;
   final String name;
   final String email;
-  final String? photoUrl;
-  final String token;
+  final String password;
+  final String? profileImagePath;
 
   User({
     required this.id,
     required this.name,
     required this.email,
-    required this.token,
-    this.photoUrl,
+    required this.password,
+    this.profileImagePath,
   });
 
-  get profileImage => null;
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'password': password,
+      'profile_image_path': profileImagePath,
+    };
+  }
+
+  factory User.fromMap(Map<String, dynamic> map) {
+    return User(
+      id: map['id'],
+      name: map['name'],
+      email: map['email'],
+      password: map['password'],
+      profileImagePath: map['profile_image_path'],
+    );
+  }
 }

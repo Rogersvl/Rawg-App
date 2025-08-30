@@ -1,13 +1,13 @@
-// features/user/domain/usecases/logout_user.dart
 
-import '../repositories/user_repository.dart';
 
-class LogoutUser {
-  final UserRepository repository;
+// import '../repositories/user_repository.dart';
 
-  LogoutUser(this.repository);
+// class LogoutUser {
+//   final UserRepository repository;
 
-  Future<void> call() async {
-    await repository.logout();
-  }
-}
+//   LogoutUser(this.repository);
+
+//   Future<void> call() async {
+//     await repository.logout();
+//   }
+// }

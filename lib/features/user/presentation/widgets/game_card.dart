@@ -41,13 +41,13 @@ class GameCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                  colors: [Colors.black, Colors.transparent],
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                 ),
               ),
               child: Text(
-                "Nota: ${game.rating?.toStringAsFixed(1) ?? 'N/A'} | Lançamento: ${game.released ?? 'Desconhecido'}",
+                "Nota: ${game.rating?.toStringAsFixed(1) ?? 'N/A'} | ${game.released ?? 'Desconhecido'}",
                 style: const TextStyle(
                   color: Colors.yellow,
                   fontWeight: FontWeight.bold,
