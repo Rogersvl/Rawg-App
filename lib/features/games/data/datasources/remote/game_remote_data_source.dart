@@ -7,6 +7,7 @@ import 'package:games_app/features/games/data/models/genre_model.dart';
 class GameRemoteDataSource {
   final Dio dio;
   final String apiKey = myApiKey;
+  final String baseURl = myBaseURL;
 
   GameRemoteDataSource({required this.dio});
 
@@ -20,7 +21,7 @@ class GameRemoteDataSource {
       }
     }
     final response = await dio.get(
-      'https://api.rawg.io/api/games',
+      '$baseURl/games',
       queryParameters: params,
     );
 
@@ -30,7 +31,7 @@ class GameRemoteDataSource {
 
   Future<List<GameModel>> fetchRecentgames() async {
     final response = await dio.get(
-      'https://api.rawg.io/api/games',
+      '$baseURl/games',
       queryParameters: {'page_size': 10, 'genres': 'action', 'key': apiKey},
     );
     final results = response.data['results'] as List;
@@ -40,7 +41,7 @@ class GameRemoteDataSource {
 
   Future<List<GenreModel>> getGenres() async {
     final response = await dio.get(
-      'https://api.rawg.io/api/genres',
+      '$baseURl/genres',
       queryParameters: {'key': apiKey},
     );
     final results = response.data['results'] as List;
@@ -49,7 +50,7 @@ class GameRemoteDataSource {
 
   Future<List<GameModel>> getGamesByGenre(int genreId) async {
     final response = await dio.get(
-      'https://api.rawg.io/api/games',
+      '$baseURl/games',
       queryParameters: {'key': apiKey, "genres": genreId.toString()},
     );
     final results = response.data['results'] as List;
@@ -58,7 +59,7 @@ class GameRemoteDataSource {
 
   Future<GameDetailModel> showDetailedGame(int gameId) async {
     final response = await dio.get(
-      'https://api.rawg.io/api/games/$gameId',
+      '$baseURl/games/$gameId',
       queryParameters: {'key': apiKey, 'screenshots_count': 5},
     );
 
@@ -67,7 +68,7 @@ class GameRemoteDataSource {
 
   Future<List<String>> getScreenShots(int gameId) async {
     final response = await dio.get(
-      'https://api.rawg.io/api/games/${gameId.toString()}/screenshots',
+      '$baseURl/games/${gameId.toString()}/screenshots',
       queryParameters: {'key': apiKey, 'page': 1, 'page_size': 10},
     );
 
